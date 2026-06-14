@@ -1,7 +1,7 @@
 {
   "extends": "./temp/tsconfig.cocos.json",
   "compilerOptions": {
-    "strict": false,
+    "strict": true,
     "types": [
       "./temp/declarations/cc",
       "./temp/declarations/jsb",

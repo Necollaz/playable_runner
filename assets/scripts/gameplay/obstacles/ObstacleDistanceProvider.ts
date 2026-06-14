@@ -1,21 +1,28 @@
 import { randomRange } from 'cc';
 
-export class ObstacleDistanceProvider
-{
+export class ObstacleDistanceProvider {
+    
+    readonly #minDistance: number;
+    readonly #maxDistance: number;
+    readonly #speed: number;
+    readonly #minSpawnInterval: number;
+
     public constructor(
-        private readonly minDistance: number,
-        private readonly maxDistance: number,
-        private readonly speed: number,
-        private readonly minSpawnInterval: number,
-    )
-    {
+        minDistance: number,
+        maxDistance: number,
+        speed: number,
+        minSpawnInterval: number,
+    ) {
+        this.#minDistance = minDistance;
+        this.#maxDistance = maxDistance;
+        this.#speed = speed;
+        this.#minSpawnInterval = minSpawnInterval;
     }
 
-    public getNextDistance(): number
-    {
-        const safeMinDistance = this.speed * this.minSpawnInterval;
-        const actualMinDistance = Math.max(this.minDistance, safeMinDistance);
-        const actualMaxDistance = Math.max(this.maxDistance, actualMinDistance);
+    public getNextDistance(): number {
+        const safeMinDistance = this.#speed * this.#minSpawnInterval;
+        const actualMinDistance = Math.max(this.#minDistance, safeMinDistance);
+        const actualMaxDistance = Math.max(this.#maxDistance, actualMinDistance);
 
         return randomRange(actualMinDistance, actualMaxDistance);
     }

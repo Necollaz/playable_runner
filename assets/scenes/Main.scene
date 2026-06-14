@@ -20,7 +20,7 @@
         "__id__": 2
       },
       {
-        "__id__": 71
+        "__id__": 72
       },
       {
         "__id__": 7
@@ -35,7 +35,7 @@
     "_active": true,
     "_components": [],
     "_prefab": {
-      "__id__": 74
+      "__id__": 75
     },
     "_lpos": {
       "__type__": "cc.Vec3",
@@ -66,7 +66,7 @@
     },
     "autoReleaseAssets": false,
     "_globals": {
-      "__id__": 81
+      "__id__": 82
     },
     "_id": "dbb2a1da-c15c-4ca0-85f4-3cc53a9bb9f0"
   },
@@ -942,6 +942,9 @@
       },
       {
         "__id__": 70
+      },
+      {
+        "__id__": 71
       }
     ],
     "_prefab": null,
@@ -1405,6 +1408,7 @@
     "appStoreUrl": "https://www.apple.com/app-store/",
     "googlePlayUrl": "https://play.google.com/store/games",
     "defaultUrl": "https://play.google.com/store/games",
+    "redirectCooldownSeconds": 0.75,
     "_id": "7fs0oCQExPXIFBhg5xlDbr"
   },
   {
@@ -2044,6 +2048,18 @@
     "_id": "354mKD16pFabhqk716tGwp"
   },
   {
+    "__type__": "1e8b7IuICJESrQWqfcuBCkQ",
+    "_name": "",
+    "_objFlags": 0,
+    "__editorExtras__": {},
+    "node": {
+      "__id__": 30
+    },
+    "_enabled": true,
+    "__prefab": null,
+    "_id": "b75E+t3q5EQ5w1yMChhAbN"
+  },
+  {
     "__type__": "cc.Node",
     "_name": "Directional Light",
     "_objFlags": 0,
@@ -2055,7 +2071,7 @@
     "_active": true,
     "_components": [
       {
-        "__id__": 72
+        "__id__": 73
       }
     ],
     "_prefab": null,
@@ -2094,7 +2110,7 @@
     "_objFlags": 0,
     "__editorExtras__": {},
     "node": {
-      "__id__": 71
+      "__id__": 72
     },
     "_enabled": true,
     "__prefab": null,
@@ -2108,7 +2124,7 @@
     "_useColorTemperature": false,
     "_colorTemperature": 6550,
     "_staticSettings": {
-      "__id__": 73
+      "__id__": 74
     },
     "_visibility": -325058561,
     "_illuminanceHDR": 65000,
@@ -2147,13 +2163,13 @@
     "instance": null,
     "targetOverrides": [
       {
-        "__id__": 75
+        "__id__": 76
       },
       {
-        "__id__": 77
+        "__id__": 78
       },
       {
-        "__id__": 79
+        "__id__": 80
       }
     ],
     "nestedPrefabInstanceRoots": [
@@ -2178,7 +2194,7 @@
       "__id__": 5
     },
     "targetInfo": {
-      "__id__": 76
+      "__id__": 77
     }
   },
   {
@@ -2200,7 +2216,7 @@
       "__id__": 5
     },
     "targetInfo": {
-      "__id__": 78
+      "__id__": 79
     }
   },
   {
@@ -2222,7 +2238,7 @@
       "__id__": 58
     },
     "targetInfo": {
-      "__id__": 80
+      "__id__": 81
     }
   },
   {
@@ -2234,28 +2250,28 @@
   {
     "__type__": "cc.SceneGlobals",
     "ambient": {
-      "__id__": 82
-    },
-    "shadows": {
       "__id__": 83
     },
-    "_skybox": {
+    "shadows": {
       "__id__": 84
     },
-    "fog": {
+    "_skybox": {
       "__id__": 85
     },
-    "octree": {
+    "fog": {
       "__id__": 86
     },
-    "skin": {
+    "octree": {
       "__id__": 87
     },
-    "lightProbeInfo": {
+    "skin": {
       "__id__": 88
     },
-    "postSettings": {
+    "lightProbeInfo": {
       "__id__": 89
+    },
+    "postSettings": {
+      "__id__": 90
     },
     "bakedWithStationaryMainLight": false,
     "bakedWithHighpLightmap": false

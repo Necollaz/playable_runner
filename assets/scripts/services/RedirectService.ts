@@ -1,4 +1,5 @@
 import { _decorator, Component, sys } from 'cc';
+import { RedirectGuard } from './RedirectGuard';
 
 const { ccclass, property } = _decorator;
 
@@ -14,25 +15,26 @@ type BrowserWindow = {
 };
 
 @ccclass('RedirectService')
-export class RedirectService extends Component
-{
+export class RedirectService extends Component {
     @property private appStoreUrl = 'https://www.apple.com/app-store/';
     @property private googlePlayUrl = 'https://play.google.com/store/games';
     @property private defaultUrl = 'https://play.google.com/store/games';
+    @property private redirectCooldownSeconds = 0.75;
 
-    private isRedirecting = false;
+    #redirectGuard!: RedirectGuard;
 
-    public redirect(): void
-    {
-        if (this.isRedirecting)
+    protected onLoad(): void {
+        this.#redirectGuard = new RedirectGuard(this.redirectCooldownSeconds);
+    }
+
+    public redirect(): void {
+        if (!this.#redirectGuard.tryLock())
             return;
 
-        this.isRedirecting = true;
         this.openUrl(this.getTargetUrl());
     }
 
-    private getTargetUrl(): string
-    {
+    private getTargetUrl(): string {
         if (sys.os === sys.OS.IOS)
             return this.appStoreUrl;
 
@@ -42,8 +44,7 @@ export class RedirectService extends Component
         return this.defaultUrl;
     }
 
-    private openUrl(url: string): void
-    {
+    private openUrl(url: string): void {
         if (this.tryOpenWithMraid(url))
             return;
 
@@ -53,8 +54,7 @@ export class RedirectService extends Component
         sys.openURL(url);
     }
 
-    private tryOpenWithMraid(url: string): boolean
-    {
+    private tryOpenWithMraid(url: string): boolean {
         const runtime = globalThis as unknown as { mraid?: MraidApi };
         const mraid = runtime.mraid;
 
@@ -62,29 +62,26 @@ export class RedirectService extends Component
             return false;
 
         mraid.open(url);
-        
+
         return true;
     }
 
-    private tryOpenWithBrowser(url: string): boolean
-    {
+    private tryOpenWithBrowser(url: string): boolean {
         const runtime = globalThis as unknown as { window?: BrowserWindow };
         const browserWindow = runtime.window;
 
         if (!browserWindow)
             return false;
 
-        if (browserWindow.open)
-        {
+        if (browserWindow.open) {
             browserWindow.open(url, '_blank');
-            
+
             return true;
         }
 
-        if (browserWindow.location)
-        {
+        if (browserWindow.location) {
             browserWindow.location.href = url;
-            
+
             return true;
         }
 

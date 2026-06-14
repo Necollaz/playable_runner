@@ -3,8 +3,7 @@ import { _decorator, Camera, Component, Node, screen, Vec3, view } from 'cc';
 const { ccclass, property } = _decorator;
 
 @ccclass('FollowCamera')
-export class FollowCamera extends Component
-{
+export class FollowCamera extends Component {
     @property(Camera) private targetCamera: Camera | null = null;
     @property(Node) private target: Node | null = null;
 
@@ -17,22 +16,19 @@ export class FollowCamera extends Component
     @property private landscapeFov = 35;
     @property private lookAtTarget = true;
 
-    private readonly targetPosition = new Vec3();
-    private readonly cameraPosition = new Vec3();
+    readonly #targetPosition = new Vec3();
+    readonly #cameraPosition = new Vec3();
 
-    protected onEnable(): void
-    {
+    protected onEnable(): void {
         view.on('canvas-resize', this.applyCameraSettings, this);
         this.applyCameraSettings();
     }
 
-    protected onDisable(): void
-    {
+    protected onDisable(): void {
         view.off('canvas-resize', this.applyCameraSettings, this);
     }
 
-    protected lateUpdate(): void
-    {
+    protected lateUpdate(): void {
         if (!this.target)
             return;
 
@@ -40,33 +36,30 @@ export class FollowCamera extends Component
         const cameraNode = camera ? camera.node : this.node;
         const offset = this.getCurrentOffset();
 
-        this.target.getWorldPosition(this.targetPosition);
-        this.cameraPosition.set(
-            this.targetPosition.x + offset.x,
-            this.targetPosition.y + offset.y,
-            this.targetPosition.z + offset.z,
+        this.target.getWorldPosition(this.#targetPosition);
+        this.#cameraPosition.set(
+            this.#targetPosition.x + offset.x,
+            this.#targetPosition.y + offset.y,
+            this.#targetPosition.z + offset.z,
         );
 
-        cameraNode.setWorldPosition(this.cameraPosition);
+        cameraNode.setWorldPosition(this.#cameraPosition);
 
         if (this.lookAtTarget)
-            cameraNode.lookAt(this.targetPosition);
+            cameraNode.lookAt(this.#targetPosition);
     }
     
-    private getCurrentOffset(): Vec3
-    {
+    private getCurrentOffset(): Vec3 {
         return this.isPortrait() ? this.portraitOffset : this.landscapeOffset;
     }
 
-    private isPortrait(): boolean
-    {
+    private isPortrait(): boolean {
         const windowSize = screen.windowSize;
 
         return windowSize.height > windowSize.width;
     }
     
-    private applyCameraSettings(): void
-    {
+    private applyCameraSettings(): void {
         const camera = this.targetCamera ?? this.getComponent(Camera);
 
         if (!camera)

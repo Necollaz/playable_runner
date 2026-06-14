@@ -1,13 +1,17 @@
 import { _decorator, Component, Node, Prefab, Vec3 } from 'cc';
+import { ActiveObstacleList } from './ActiveObstacleList';
 import { Obstacle } from './Obstacle';
 import { ObstacleDistanceProvider } from './ObstacleDistanceProvider';
+import { ObstacleFactory } from './ObstacleFactory';
+import { ObstacleLifecycleHandlers } from './ObstacleLifecycleHandlers';
+import { ObstacleMovementSettings } from './ObstacleMovementSettings';
 import { ObstaclePool } from './ObstaclePool';
+import { ObstacleSpawnSequence } from './ObstacleSpawnSequence';
 
 const { ccclass, property } = _decorator;
 
 @ccclass('ObstacleSpawner')
-export class ObstacleSpawner extends Component
-{
+export class ObstacleSpawner extends Component {
     @property(Prefab) private obstaclePrefab: Prefab | null = null;
     @property(Node) private obstacleParent: Node | null = null;
     @property(Vec3) private spawnPosition = new Vec3(0, 0.35, -18);
@@ -23,181 +27,139 @@ export class ObstacleSpawner extends Component
     @property private closestInitialObstacleZ = -6;
     @property private initialPoolSize = 6;
 
-    private readonly activeObstacles: Obstacle[] = [];
+    #pool!: ObstaclePool;
+    #factory!: ObstacleFactory;
+    #activeObstacles!: ActiveObstacleList;
+    #spawnSequence!: ObstacleSpawnSequence;
 
-    private pool: ObstaclePool | null = null;
-    private distanceProvider: ObstacleDistanceProvider | null = null;
-    private latestSpawnedObstacle: Node | null = null;
-    private latestSpawnZ = 0;
-    private nextDistance = 0;
-    private obstaclePassedHandler: ((obstacle: Obstacle) => void) | null = null;
-    private obstacleHitHandler: ((obstacle: Obstacle) => void) | null = null;
+    #obstaclePassedHandler: ((obstacle: Obstacle) => void) | null = null;
+    #obstacleHitHandler: ((obstacle: Obstacle) => void) | null = null;
 
-    protected start(): void
-    {
+    protected onLoad(): void {
+        this.createRuntimeObjects();
+    }
+
+    protected start(): void {
         this.reset();
     }
 
-    protected update(): void
-    {
-        if (!this.latestSpawnedObstacle)
+    protected update(): void {
+        if (!this.#spawnSequence.shouldSpawnNext())
             return;
 
-        const distanceFromLatestSpawn = this.latestSpawnedObstacle.position.z - this.latestSpawnZ;
-
-        if (distanceFromLatestSpawn >= this.nextDistance)
-            this.spawnNextObstacle();
+        this.spawnNextObstacle();
     }
 
-    public reset(): void
-    {
-        this.createPoolIfNeeded();
-        this.createDistanceProvider();
-        this.clearObstacles();
+    public reset(): void {
+        this.#activeObstacles.clear();
+        this.#spawnSequence = this.createSpawnSequence();
 
-        this.spawnInitialObstacles();
-        this.nextDistance = this.getNextDistance();
-    }
+        const initialPositions = this.#spawnSequence.createInitialSpawnPositions();
+        let firstSpawnedNode: Node | null = null;
 
-    public setMoving(value: boolean): void
-    {
-        for (const obstacle of this.activeObstacles)
-        {
-            if (value)
-                this.initializeObstacle(obstacle);
-            else
-                obstacle.stop();
-        }
-    }
+        for (const position of initialPositions) {
+            const obstacle = this.spawnObstacleAt(position);
 
-    public setObstaclePassedHandler(handler: ((obstacle: Obstacle) => void) | null): void
-    {
-        this.obstaclePassedHandler = handler;
-    }
-
-    public setObstacleHitHandler(handler: ((obstacle: Obstacle) => void) | null): void
-    {
-        this.obstacleHitHandler = handler;
-    }
-
-    private spawnInitialObstacles(): void
-    {
-        let nextSpawnZ = this.spawnZ;
-
-        for (let i = 0; i < this.startObstacleCount; i++)
-        {
-            if (nextSpawnZ > this.closestInitialObstacleZ)
-                break;
-
-            const obstacleNode = this.spawnObstacleAt(nextSpawnZ);
-
-            if (i === 0 && obstacleNode)
-            {
-                this.latestSpawnedObstacle = obstacleNode;
-                this.latestSpawnZ = nextSpawnZ;
-            }
-
-            nextSpawnZ += this.getNextDistance();
+            firstSpawnedNode ??= obstacle.node;
         }
 
-        if (!this.latestSpawnedObstacle)
-            this.spawnNextObstacle();
-    }
-
-    private spawnNextObstacle(): void
-    {
-        const obstacleNode = this.spawnObstacleAt(this.spawnZ);
-
-        if (!obstacleNode)
+        if (firstSpawnedNode) {
+            this.#spawnSequence.setInitialAnchor(firstSpawnedNode);
             return;
-
-        this.latestSpawnedObstacle = obstacleNode;
-        this.latestSpawnZ = this.spawnZ;
-        this.nextDistance = this.getNextDistance();
-    }
-
-    private spawnObstacleAt(zPosition: number): Node | null
-    {
-        this.createPoolIfNeeded();
-
-        if (!this.pool)
-            return null;
-
-        const obstacleNode = this.pool.get();
-
-        obstacleNode.setPosition(this.spawnPosition.x, this.spawnPosition.y, zPosition);
-
-        const obstacle = obstacleNode.getComponent(Obstacle);
-
-        if (obstacle)
-        {
-            this.initializeObstacle(obstacle);
-            this.activeObstacles.push(obstacle);
         }
 
-        return obstacleNode;
+        this.spawnNextObstacle();
     }
 
-    private initializeObstacle(obstacle: Obstacle): void
-    {
-        obstacle.initialize(
-            this.speed,
-            this.passedZ,
-            this.despawnZ,
-            (passedObstacle) => this.obstaclePassedHandler?.(passedObstacle),
-            (hitObstacle) => this.obstacleHitHandler?.(hitObstacle),
-            (despawnedObstacle) => this.removeObstacle(despawnedObstacle),
-        );
+    public setMoving(value: boolean): void {
+        this.#activeObstacles.setMoving(value, (obstacle) => this.initializeObstacle(obstacle));
     }
 
-    private removeObstacle(obstacle: Obstacle): void
-    {
-        const index = this.activeObstacles.indexOf(obstacle);
-
-        if (index >= 0)
-            this.activeObstacles.splice(index, 1);
-
-        obstacle.stop();
-        this.pool?.release(obstacle.node);
+    public setObstaclePassedHandler(handler: ((obstacle: Obstacle) => void) | null): void {
+        this.#obstaclePassedHandler = handler;
     }
 
-    private clearObstacles(): void
-    {
-        for (const obstacle of this.activeObstacles)
-        {
-            obstacle.stop();
-            this.pool?.release(obstacle.node);
-        }
-
-        this.activeObstacles.length = 0;
-        this.latestSpawnedObstacle = null;
+    public setObstacleHitHandler(handler: ((obstacle: Obstacle) => void) | null): void {
+        this.#obstacleHitHandler = handler;
     }
 
-    private createPoolIfNeeded(): void
-    {
-        if (this.pool || !this.obstaclePrefab)
-            return;
+    private createRuntimeObjects(): void {
+        if (!this.obstaclePrefab)
+            throw new Error('[ObstacleSpawner] Obstacle Prefab is not assigned in Cocos Inspector.');
 
         const parent = this.obstacleParent ?? this.node;
 
-        this.pool = new ObstaclePool(this.obstaclePrefab, parent);
-        this.pool.prewarm(this.initialPoolSize);
+        this.#pool = new ObstaclePool(this.obstaclePrefab, parent);
+        this.#pool.prewarm(this.initialPoolSize);
+
+        this.#factory = new ObstacleFactory(this.#pool, this.spawnPosition);
+        this.#activeObstacles = new ActiveObstacleList(this.#pool);
+        this.#spawnSequence = this.createSpawnSequence();
     }
 
-    private createDistanceProvider(): void
-    {
-        this.distanceProvider = new ObstacleDistanceProvider(
+    private spawnNextObstacle(): void {
+        const obstacle = this.spawnObstacleAt(this.spawnZ);
+
+        this.#spawnSequence.registerSpawned(obstacle.node);
+    }
+
+    private spawnObstacleAt(zPosition: number): Obstacle {
+        const obstacle = this.#factory.create(
+            zPosition,
+            this.getMovementSettings(),
+            this.getLifecycleHandlers(),
+        );
+
+        this.#activeObstacles.add(obstacle);
+
+        return obstacle;
+    }
+
+    private initializeObstacle(obstacle: Obstacle): void {
+        const movementSettings = this.getMovementSettings();
+        const handlers = this.getLifecycleHandlers();
+
+        obstacle.initialize(
+            movementSettings.speed,
+            movementSettings.passedZ,
+            movementSettings.despawnZ,
+            handlers.onPassed,
+            handlers.onHit,
+            handlers.onDespawn,
+        );
+    }
+
+    private getMovementSettings(): ObstacleMovementSettings {
+        return {
+            speed: this.speed,
+            passedZ: this.passedZ,
+            despawnZ: this.despawnZ,
+        };
+    }
+
+    private getLifecycleHandlers(): ObstacleLifecycleHandlers {
+        return {
+            onPassed: (obstacle) => this.#obstaclePassedHandler?.(obstacle),
+            onHit: (obstacle) => this.#obstacleHitHandler?.(obstacle),
+            onDespawn: (obstacle) => this.#activeObstacles.remove(obstacle),
+        };
+    }
+
+    private createSpawnSequence(): ObstacleSpawnSequence {
+        return new ObstacleSpawnSequence(
+            this.createDistanceProvider(),
+            this.spawnZ,
+            this.startObstacleCount,
+            this.closestInitialObstacleZ,
+        );
+    }
+
+    private createDistanceProvider(): ObstacleDistanceProvider {
+        return new ObstacleDistanceProvider(
             this.minDistance,
             this.maxDistance,
             this.speed,
             this.minSpawnInterval,
         );
-    }
-
-    private getNextDistance(): number
-    {
-        this.createDistanceProvider();
-
-        return this.distanceProvider?.getNextDistance() ?? this.minDistance;
     }
 }

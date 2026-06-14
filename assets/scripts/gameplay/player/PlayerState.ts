@@ -1,5 +1,4 @@
-export enum PlayerState
-{
+export enum PlayerState {
     Idle = 'Idle',
     Run = 'Run',
     Jump = 'Jump',

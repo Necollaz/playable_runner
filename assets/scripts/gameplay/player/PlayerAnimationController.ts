@@ -4,48 +4,41 @@ import { PlayerState } from './PlayerState';
 const { ccclass, property } = _decorator;
 
 @ccclass('PlayerAnimationController')
-export class PlayerAnimationController extends Component
-{
+export class PlayerAnimationController extends Component {
     @property(SkeletalAnimation) private animation: SkeletalAnimation | null = null;
 
     @property private idleClipName = 'Idle';
     @property private runClipName = 'Run';
     @property private jumpClipName = 'Jump';
+    @property private fallClipName = 'Idle';
 
-    protected onLoad(): void
-    {
-        this.animation = this.animation ?? this.getComponent(SkeletalAnimation);
-    }
+    #animationComponent!: SkeletalAnimation;
+    #clipByState!: Record<PlayerState, string>;
 
-    public play(state: PlayerState): void
-    {
-        switch (state)
-        {
-            case PlayerState.Idle:
-                this.playClip(this.idleClipName);
-                break;
-
-            case PlayerState.Run:
-                this.playClip(this.runClipName);
-                break;
-
-            case PlayerState.Jump:
-                this.playClip(this.jumpClipName);
-                break;
-
-            case PlayerState.Fall:
-                this.playClip(this.idleClipName);
-                break;
-        }
-    }
-
-    private playClip(clipName: string): void
-    {
+    protected onLoad(): void {
         const animation = this.animation ?? this.getComponent(SkeletalAnimation);
 
         if (!animation)
-            return;
+            throw new Error('[PlayerAnimationController] SkeletalAnimation is not assigned or attached to Player.');
 
-        animation.crossFade(clipName, 0.08);
+        this.#animationComponent = animation;
+        this.#clipByState = this.createClipMap();
+    }
+
+    public play(state: PlayerState): void {
+        this.playClip(this.#clipByState[state]);
+    }
+
+    private createClipMap(): Record<PlayerState, string> {
+        return {
+            [PlayerState.Idle]: this.idleClipName,
+            [PlayerState.Run]: this.runClipName,
+            [PlayerState.Jump]: this.jumpClipName,
+            [PlayerState.Fall]: this.fallClipName,
+        };
+    }
+
+    private playClip(clipName: string): void {
+        this.#animationComponent.crossFade(clipName, 0.08);
     }
 }

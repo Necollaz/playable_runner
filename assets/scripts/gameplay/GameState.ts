@@ -1,5 +1,4 @@
-export enum GameState
-{
+export enum GameState {
     IntroReady = 'IntroReady',
     Playing = 'Playing',
     Restarting = 'Restarting',

@@ -1,34 +1,26 @@
-export class GameProgress
-{
-    private passedObstacles = 0;
-    private collisions = 0;
+export class GameProgress {
+    readonly #targetPassedObstacles: number;
+    
+    #passedObstacles = 0;
+    #collisions = 0;
 
-    public constructor(private readonly targetPassedObstacles: number)
-    {
+    public constructor(targetPassedObstacles: number) {
+        this.#targetPassedObstacles = targetPassedObstacles;
     }
 
-    public recordPassedObstacle(): boolean
-    {
-        this.passedObstacles++;
+    public recordPassedObstacle(): boolean {
+        this.#passedObstacles++;
 
-        return this.passedObstacles >= this.targetPassedObstacles;
+        return this.#passedObstacles >= this.#targetPassedObstacles;
     }
 
-    public recordCollision(): number
-    {
-        this.collisions++;
+    public recordCollision(): number {
+        this.#collisions++;
 
-        return this.collisions;
+        return this.#collisions;
     }
 
-    public resetRun(): void
-    {
-        this.passedObstacles = 0;
-    }
-
-    public resetAll(): void
-    {
-        this.passedObstacles = 0;
-        this.collisions = 0;
+    public resetRun(): void {
+        this.#passedObstacles = 0;
     }
 }

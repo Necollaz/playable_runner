@@ -6,14 +6,16 @@ import { PlayerInputReader } from './player/PlayerInputReader';
 import { RedirectService } from '../services/RedirectService';
 import { FinalScreenView } from '../ui/FinalScreenView';
 import { GameplayHudView } from '../ui/GameplayHudView';
-import { GameProgress } from './GameProgress';
+import { GameDependencies } from './GameDependencies';
+import { GameRules } from './GameRules';
+import { GameSceneController } from './GameSceneController';
 import { GameState } from './GameState';
+import { GameStateMachine } from './GameStateMachine';
 
 const { ccclass, property } = _decorator;
 
 @ccclass('GameManager')
-export class GameManager extends Component
-{
+export class GameManager extends Component {
     @property(PlayerController) private playerController: PlayerController | null = null;
     @property(PlayerInputReader) private inputReader: PlayerInputReader | null = null;
     @property(ObstacleSpawner) private obstacleSpawner: ObstacleSpawner | null = null;
@@ -25,128 +27,139 @@ export class GameManager extends Component
     @property private maxCollisionsBeforeFinal = 2;
     @property private restartDelay = 0.8;
 
-    private state = GameState.IntroReady;
-    private progress: GameProgress | null = null;
+    #dependencies: GameDependencies | null = null;
+    #stateMachine!: GameStateMachine;
+    #rules!: GameRules;
+    #sceneController!: GameSceneController;
 
-    protected onLoad(): void
-    {
-        this.progress = new GameProgress(this.targetPassedObstacles);
-        this.finalScreenView?.hide();
+    readonly #restartHandler = (): void => this.restartLevel();
+
+    protected onLoad(): void {
+        this.#dependencies = this.createDependencies();
+        this.#stateMachine = new GameStateMachine();
+        this.#rules = new GameRules(this.targetPassedObstacles, this.maxCollisionsBeforeFinal);
+        this.#sceneController = new GameSceneController(this.#dependencies);
+
+        this.#sceneController.hideFinalScreen();
     }
 
-    protected onEnable(): void
-    {
-        this.inputReader?.setTapHandler(() => this.handleGameplayTap());
-        this.finalScreenView?.setTapHandler(() => this.handleFinalTap());
-        this.obstacleSpawner?.setObstaclePassedHandler((obstacle) => this.handleObstaclePassed(obstacle));
-        this.obstacleSpawner?.setObstacleHitHandler((obstacle) => this.handleObstacleHit(obstacle));
+    protected onEnable(): void {
+        const dependencies = this.getDependencies();
+
+        dependencies.inputReader.setTapHandler(() => this.handleGameplayTap());
+        dependencies.finalScreenView.setTapHandler(() => this.handleFinalTap());
+        dependencies.obstacleSpawner.setObstaclePassedHandler((obstacle) => 
+            this.handleObstaclePassed(obstacle));
+        dependencies.obstacleSpawner.setObstacleHitHandler((obstacle) =>
+            this.handleObstacleHit(obstacle));
     }
 
-    protected onDisable(): void
-    {
-        this.inputReader?.setTapHandler(null);
-        this.finalScreenView?.setTapHandler(null);
-        this.obstacleSpawner?.setObstaclePassedHandler(null);
-        this.obstacleSpawner?.setObstacleHitHandler(null);
-        this.unschedule(this.restartLevel);
+    protected onDisable(): void {
+        if (!this.#dependencies)
+            return;
+
+        this.#dependencies.inputReader.setTapHandler(null);
+        this.#dependencies.finalScreenView.setTapHandler(null);
+        this.#dependencies.obstacleSpawner.setObstaclePassedHandler(null);
+        this.#dependencies.obstacleSpawner.setObstacleHitHandler(null);
+
+        this.unschedule(this.#restartHandler);
     }
 
-    protected start(): void
-    {
+    protected start(): void {
         this.enterPlaying();
     }
 
-    private handleGameplayTap(): void
-    {
-        if (this.state !== GameState.Playing)
+    private handleGameplayTap(): void {
+        if (!this.#stateMachine.is(GameState.Playing))
             return;
 
-        this.playerController?.jump();
+        this.#sceneController.jump();
     }
 
-    private handleFinalTap(): void
-    {
-        if (this.state !== GameState.Final)
+    private handleFinalTap(): void {
+        if (!this.#stateMachine.is(GameState.Final))
             return;
 
         this.enterRedirecting();
     }
 
-    private handleObstaclePassed(_obstacle: Obstacle): void
-    {
-        if (this.state !== GameState.Playing || !this.progress)
+    private handleObstaclePassed(_obstacle: Obstacle): void {
+        if (!this.#stateMachine.is(GameState.Playing))
             return;
 
-        if (this.progress.recordPassedObstacle())
+        if (this.#rules.recordPassedObstacle())
             this.enterFinal();
     }
 
-    private handleObstacleHit(_obstacle: Obstacle): void
-    {
-        if (this.state !== GameState.Playing || !this.progress)
+    private handleObstacleHit(_obstacle: Obstacle): void {
+        if (!this.#stateMachine.is(GameState.Playing))
             return;
 
-        const collisions = this.progress.recordCollision();
+        this.#sceneController.fallAndStopObstacles();
 
-        this.playerController?.fall();
-        this.obstacleSpawner?.setMoving(false);
-
-        if (collisions >= this.maxCollisionsBeforeFinal)
-        {
+        if (this.#rules.recordCollision()) {
             this.enterFinal();
-            
             return;
         }
 
         this.enterRestarting();
     }
 
-    private enterPlaying(): void
-    {
-        this.state = GameState.Playing;
-
-        this.gameplayHudView?.show();
-        this.finalScreenView?.hide();
-        this.inputReader?.setInputEnabled(true);
-        this.playerController?.reset();
-        this.obstacleSpawner?.reset();
-        this.obstacleSpawner?.setMoving(true);
+    private enterPlaying(): void {
+        this.#stateMachine.enter(GameState.Playing);
+        this.#sceneController.enterPlaying();
     }
 
-    private enterRestarting(): void
-    {
-        this.state = GameState.Restarting;
+    private enterRestarting(): void {
+        this.#stateMachine.enter(GameState.Restarting);
+        this.#sceneController.enterRestarting();
+        this.#rules.resetRunProgress();
 
-        this.inputReader?.setInputEnabled(false);
-        this.progress?.resetRun();
-
-        this.scheduleOnce(this.restartLevel, this.restartDelay);
+        this.scheduleOnce(this.#restartHandler, this.restartDelay);
     }
 
-    private restartLevel(): void
-    {
-        if (this.state !== GameState.Restarting)
+    private restartLevel(): void {
+        if (!this.#stateMachine.is(GameState.Restarting))
             return;
 
         this.enterPlaying();
     }
 
-    private enterFinal(): void
-    {
-        this.state = GameState.Final;
+    private enterFinal(): void {
+        this.unschedule(this.#restartHandler);
 
-        this.unschedule(this.restartLevel);
-        this.gameplayHudView?.hide();
-        this.inputReader?.setInputEnabled(false);
-        this.obstacleSpawner?.setMoving(false);
-        this.finalScreenView?.show();
+        this.#stateMachine.enter(GameState.Final);
+        this.#sceneController.enterFinal();
     }
 
-    private enterRedirecting(): void
-    {
-        this.state = GameState.Redirecting;
+    private enterRedirecting(): void {
+        this.#stateMachine.enter(GameState.Redirecting);
+        this.#sceneController.enterRedirecting();
+    }
 
-        this.inputReader?.setInputEnabled(false);
-        this.redirectService?.redirect();
+    private createDependencies(): GameDependencies {
+        return {
+            playerController: this.requireReference(this.playerController, 'Player Controller'),
+            inputReader: this.requireReference(this.inputReader, 'Input Reader'),
+            obstacleSpawner: this.requireReference(this.obstacleSpawner, 'Obstacle Spawner'),
+            gameplayHudView: this.requireReference(this.gameplayHudView, 'Gameplay Hud View'),
+            finalScreenView: this.requireReference(this.finalScreenView, 'Final Screen View'),
+            redirectService: this.requireReference(this.redirectService, 'Redirect Service'),
+        };
+    }
+
+    private getDependencies(): GameDependencies {
+        if (!this.#dependencies)
+            throw new Error('[GameManager] Dependencies are not initialized.');
+
+        return this.#dependencies;
+    }
+
+    private requireReference<T>(reference: T | null, propertyName: string): T {
+        if (reference)
+            return reference;
+
+        throw new Error(`[GameManager] ${propertyName} is not assigned in Cocos Inspector.`);
     }
 }

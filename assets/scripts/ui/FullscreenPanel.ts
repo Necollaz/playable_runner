@@ -1,39 +1,52 @@
-import { _decorator, Component, UITransform, Widget } from 'cc';
+import { _decorator, Component, UITransform, view, Widget } from 'cc';
 
 const { ccclass, requireComponent } = _decorator;
 
 @ccclass('FullscreenPanel')
 @requireComponent(UITransform)
-export class FullscreenPanel extends Component
-{
-    private uiTransform: UITransform | null = null;
-    private panelWidget: Widget | null = null;
+export class FullscreenPanel extends Component {
+    #uiTransform!: UITransform;
+    #panelWidget: Widget | null = null;
 
-    protected onLoad(): void
-    {
-        this.uiTransform = this.getComponent(UITransform);
-        this.panelWidget = this.getComponent(Widget);
+    protected onLoad(): void {
+        const uiTransform = this.getComponent(UITransform);
 
-        if (this.panelWidget)
-            this.panelWidget.enabled = false;
+        if (!uiTransform)
+            throw new Error('[FullscreenPanel] UITransform is required.');
+
+        this.#uiTransform = uiTransform;
+        this.#panelWidget = this.getComponent(Widget);
+
+        if (this.#panelWidget)
+            this.#panelWidget.enabled = false;
     }
 
-    protected onEnable(): void
-    {
+    protected onEnable(): void {
+        view.on('canvas-resize', this.refresh, this);
+
         this.refresh();
-        this.scheduleOnce(() => this.refresh(), 0);
+        this.scheduleOnce(this.refresh, 0);
     }
 
-    public refresh(): void
-    {
-        const parentTransform = this.node.parent?.getComponent(UITransform);
+    protected onDisable(): void {
+        view.off('canvas-resize', this.refresh, this);
+    }
 
-        if (!parentTransform)
-            return;
+    public refresh(): void {
+        const size = view.getDesignResolutionSize();
 
-        const size = parentTransform.contentSize;
-
-        this.uiTransform?.setContentSize(size.width, size.height);
+        this.#uiTransform.setContentSize(size.width, size.height);
         this.node.setPosition(0, 0, 0);
+
+        this.scheduleOnce(this.updateChildWidgets, 0);
+    }
+
+    private updateChildWidgets(): void {
+        for (const widget of this.getComponentsInChildren(Widget)) {
+            if (!widget.enabledInHierarchy)
+                continue;
+
+            widget.updateAlignment();
+        }
     }
 }
