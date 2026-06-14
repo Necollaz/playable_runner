@@ -132,6 +132,12 @@
       "scenes": [
         "ec78450e-66a2-4d22-a9aa-4dd6bc0fcdd5@86934"
       ]
+    },
+    "meshOptimize": {
+      "enable": false
+    },
+    "meshSimplify": {
+      "enable": false
     }
   }
 }
