@@ -1,4 +1,4 @@
-import { _decorator, Component, Node, UITransform, Widget } from 'cc';
+import { _decorator, Component, UITransform, Widget } from 'cc';
 
 const { ccclass, requireComponent } = _decorator;
 
@@ -26,12 +26,6 @@ export class FullscreenPanel extends Component
 
     public refresh(): void
     {
-        this.applyParentSize();
-        this.scheduleOnce(() => this.updateChildWidgets(), 0);
-    }
-
-    private applyParentSize(): void
-    {
         const parentTransform = this.node.parent?.getComponent(UITransform);
 
         if (!parentTransform)
@@ -41,19 +35,5 @@ export class FullscreenPanel extends Component
 
         this.uiTransform?.setContentSize(size.width, size.height);
         this.node.setPosition(0, 0, 0);
-    }
-
-    private updateChildWidgets(): void
-    {
-        this.updateWidgetsRecursive(this.node);
-    }
-
-    private updateWidgetsRecursive(root: Node): void
-    {
-        for (const child of root.children)
-        {
-            child.getComponent(Widget)?.updateAlignment();
-            this.updateWidgetsRecursive(child);
-        }
     }
 }

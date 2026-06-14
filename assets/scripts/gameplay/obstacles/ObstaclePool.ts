@@ -31,6 +31,9 @@ export class ObstaclePool
 
     public release(node: Node): void
     {
+        if (this.inactiveNodes.includes(node))
+            return;
+
         if (node.parent !== this.parent)
             node.setParent(this.parent);
 

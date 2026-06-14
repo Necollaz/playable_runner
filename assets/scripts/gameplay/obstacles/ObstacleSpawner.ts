@@ -1,5 +1,6 @@
-import { _decorator, Component, Node, Prefab, randomRange, Vec3 } from 'cc';
+import { _decorator, Component, Node, Prefab, Vec3 } from 'cc';
 import { Obstacle } from './Obstacle';
+import { ObstacleDistanceProvider } from './ObstacleDistanceProvider';
 import { ObstaclePool } from './ObstaclePool';
 
 const { ccclass, property } = _decorator;
@@ -25,6 +26,7 @@ export class ObstacleSpawner extends Component
     private readonly activeObstacles: Obstacle[] = [];
 
     private pool: ObstaclePool | null = null;
+    private distanceProvider: ObstacleDistanceProvider | null = null;
     private latestSpawnedObstacle: Node | null = null;
     private latestSpawnZ = 0;
     private nextDistance = 0;
@@ -50,10 +52,11 @@ export class ObstacleSpawner extends Component
     public reset(): void
     {
         this.createPoolIfNeeded();
+        this.createDistanceProvider();
         this.clearObstacles();
 
         this.spawnInitialObstacles();
-        this.nextDistance = this.getRandomDistance();
+        this.nextDistance = this.getNextDistance();
     }
 
     public setMoving(value: boolean): void
@@ -94,7 +97,7 @@ export class ObstacleSpawner extends Component
                 this.latestSpawnZ = nextSpawnZ;
             }
 
-            nextSpawnZ += this.getRandomDistance();
+            nextSpawnZ += this.getNextDistance();
         }
 
         if (!this.latestSpawnedObstacle)
@@ -110,7 +113,7 @@ export class ObstacleSpawner extends Component
 
         this.latestSpawnedObstacle = obstacleNode;
         this.latestSpawnZ = this.spawnZ;
-        this.nextDistance = this.getRandomDistance();
+        this.nextDistance = this.getNextDistance();
     }
 
     private spawnObstacleAt(zPosition: number): Node | null
@@ -181,12 +184,20 @@ export class ObstacleSpawner extends Component
         this.pool.prewarm(this.initialPoolSize);
     }
 
-    private getRandomDistance(): number
+    private createDistanceProvider(): void
     {
-        const safeMinDistance = this.speed * this.minSpawnInterval;
-        const actualMinDistance = Math.max(this.minDistance, safeMinDistance);
-        const actualMaxDistance = Math.max(this.maxDistance, actualMinDistance);
+        this.distanceProvider = new ObstacleDistanceProvider(
+            this.minDistance,
+            this.maxDistance,
+            this.speed,
+            this.minSpawnInterval,
+        );
+    }
 
-        return randomRange(actualMinDistance, actualMaxDistance);
+    private getNextDistance(): number
+    {
+        this.createDistanceProvider();
+
+        return this.distanceProvider?.getNextDistance() ?? this.minDistance;
     }
 }
