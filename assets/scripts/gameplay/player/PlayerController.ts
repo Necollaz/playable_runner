@@ -1,6 +1,5 @@
 import { _decorator, Component } from 'cc';
 import { PlayerAnimationController } from './PlayerAnimationController';
-import { PlayerInputReader } from './PlayerInputReader';
 import { PlayerJumpMovement } from './PlayerJumpMovement';
 import { PlayerState } from './PlayerState';
 
@@ -11,7 +10,6 @@ export class PlayerController extends Component
 {
     @property(PlayerAnimationController) private animationController: PlayerAnimationController | null = null;
     @property(PlayerJumpMovement) private jumpMovement: PlayerJumpMovement | null = null;
-    @property(PlayerInputReader) private inputReader: PlayerInputReader | null = null;
 
     private state = PlayerState.Idle;
 
@@ -19,22 +17,6 @@ export class PlayerController extends Component
     {
         this.animationController = this.animationController ?? this.getComponent(PlayerAnimationController);
         this.jumpMovement = this.jumpMovement ?? this.getComponent(PlayerJumpMovement);
-        this.inputReader = this.inputReader ?? this.getComponent(PlayerInputReader);
-    }
-
-    protected onEnable(): void
-    {
-        this.inputReader?.setJumpRequestedHandler(() => this.jump());
-    }
-
-    protected onDisable(): void
-    {
-        this.inputReader?.setJumpRequestedHandler(null);
-    }
-
-    protected  start(): void
-    {
-        this.startRun();
     }
 
     public jump(): boolean
@@ -55,11 +37,7 @@ export class PlayerController extends Component
 
     public startRun(): void
     {
-        if (this.state === PlayerState.Fall)
-            return;
-
         this.setState(PlayerState.Run);
-        this.inputReader?.setInputEnabled(true);
     }
 
     public fall(): void
@@ -67,7 +45,6 @@ export class PlayerController extends Component
         if (this.state === PlayerState.Fall)
             return;
 
-        this.inputReader?.setInputEnabled(false);
         this.setState(PlayerState.Fall);
         this.jumpMovement?.fall();
     }
@@ -75,8 +52,7 @@ export class PlayerController extends Component
     public reset(): void
     {
         this.jumpMovement?.reset();
-        this.inputReader?.setInputEnabled(true);
-        this.startRun();
+        this.setState(PlayerState.Run);
     }
 
     private setState(nextState: PlayerState): void

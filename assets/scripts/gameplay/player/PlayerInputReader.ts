@@ -1,24 +1,29 @@
-import { _decorator, Component, Input, input } from 'cc';
+import { _decorator, Component, EventMouse, EventTouch, Node } from 'cc';
 
 const { ccclass, property } = _decorator;
 
 @ccclass('PlayerInputReader')
 export class PlayerInputReader extends Component
 {
+    @property(Node) private inputRoot: Node | null = null;
     @property private acceptInput = true;
 
-    private jumpRequestedHandler: (() => void) | null = null;
+    private tapHandler: (() => void) | null = null;
 
     protected onEnable(): void
     {
-        input.on(Input.EventType.TOUCH_START, this.handleInput, this);
-        input.on(Input.EventType.MOUSE_DOWN, this.handleInput, this);
+        const root = this.getInputRoot();
+
+        root.on(Node.EventType.TOUCH_START, this.handleInput, this);
+        root.on(Node.EventType.MOUSE_DOWN, this.handleInput, this);
     }
 
     protected onDisable(): void
     {
-        input.off(Input.EventType.TOUCH_START, this.handleInput, this);
-        input.off(Input.EventType.MOUSE_DOWN, this.handleInput, this);
+        const root = this.getInputRoot();
+
+        root.off(Node.EventType.TOUCH_START, this.handleInput, this);
+        root.off(Node.EventType.MOUSE_DOWN, this.handleInput, this);
     }
 
     public setInputEnabled(value: boolean): void
@@ -26,16 +31,21 @@ export class PlayerInputReader extends Component
         this.acceptInput = value;
     }
 
-    public setJumpRequestedHandler(handler: (() => void) | null): void
+    public setTapHandler(handler: (() => void) | null): void
     {
-        this.jumpRequestedHandler = handler;
+        this.tapHandler = handler;
     }
 
-    private handleInput(): void
+    private handleInput(_event: EventTouch | EventMouse): void
     {
-        if (!this.acceptInput || !this.jumpRequestedHandler)
+        if (!this.acceptInput || !this.tapHandler)
             return;
 
-        this.jumpRequestedHandler();
+        this.tapHandler();
+    }
+
+    private getInputRoot(): Node
+    {
+        return this.inputRoot ?? this.node;
     }
 }

@@ -13,6 +13,7 @@ export class ObstacleSpawner extends Component
 
     @property private speed = 3.5;
     @property private spawnZ = -18;
+    @property private passedZ = 1;
     @property private despawnZ = 15;
     @property private minDistance = 7;
     @property private maxDistance = 11;
@@ -27,6 +28,8 @@ export class ObstacleSpawner extends Component
     private latestSpawnedObstacle: Node | null = null;
     private latestSpawnZ = 0;
     private nextDistance = 0;
+    private obstaclePassedHandler: ((obstacle: Obstacle) => void) | null = null;
+    private obstacleHitHandler: ((obstacle: Obstacle) => void) | null = null;
 
     protected start(): void
     {
@@ -58,10 +61,20 @@ export class ObstacleSpawner extends Component
         for (const obstacle of this.activeObstacles)
         {
             if (value)
-                obstacle.initialize(this.speed, this.despawnZ, (passedObstacle) => this.removeObstacle(passedObstacle));
+                this.initializeObstacle(obstacle);
             else
                 obstacle.stop();
         }
+    }
+
+    public setObstaclePassedHandler(handler: ((obstacle: Obstacle) => void) | null): void
+    {
+        this.obstaclePassedHandler = handler;
+    }
+
+    public setObstacleHitHandler(handler: ((obstacle: Obstacle) => void) | null): void
+    {
+        this.obstacleHitHandler = handler;
     }
 
     private spawnInitialObstacles(): void
@@ -115,11 +128,23 @@ export class ObstacleSpawner extends Component
 
         if (obstacle)
         {
-            obstacle.initialize(this.speed, this.despawnZ, (passedObstacle) => this.removeObstacle(passedObstacle));
+            this.initializeObstacle(obstacle);
             this.activeObstacles.push(obstacle);
         }
 
         return obstacleNode;
+    }
+
+    private initializeObstacle(obstacle: Obstacle): void
+    {
+        obstacle.initialize(
+            this.speed,
+            this.passedZ,
+            this.despawnZ,
+            (passedObstacle) => this.obstaclePassedHandler?.(passedObstacle),
+            (hitObstacle) => this.obstacleHitHandler?.(hitObstacle),
+            (despawnedObstacle) => this.removeObstacle(despawnedObstacle),
+        );
     }
 
     private removeObstacle(obstacle: Obstacle): void

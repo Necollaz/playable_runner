@@ -32,10 +32,28 @@
       },
       {
         "__id__": 127
+      },
+      {
+        "__id__": 129
+      },
+      {
+        "__id__": 131
+      },
+      {
+        "__id__": 133
+      },
+      {
+        "__id__": 135
+      },
+      {
+        "__id__": 137
+      },
+      {
+        "__id__": 139
       }
     ],
     "_prefab": {
-      "__id__": 129
+      "__id__": 141
     },
     "_lpos": {
       "__type__": "cc.Vec3",
@@ -3745,7 +3763,10 @@
         "__expectedType__": "cc.AnimationClip"
       }
     ],
-    "_defaultClip": null,
+    "_defaultClip": {
+      "__uuid__": "4a234776-3396-4ae3-b949-609557bac58f@49434",
+      "__expectedType__": "cc.AnimationClip"
+    },
     "_useBakedAnimation": true,
     "_sockets": [],
     "_id": ""
@@ -3753,6 +3774,43 @@
   {
     "__type__": "cc.CompPrefabInfo",
     "fileId": "ea3iwaUdleoLPX51N9YWcu"
+  },
+  {
+    "__type__": "cc.RigidBody",
+    "_name": "",
+    "_objFlags": 0,
+    "__editorExtras__": {},
+    "node": {
+      "__id__": 1
+    },
+    "_enabled": true,
+    "__prefab": {
+      "__id__": 128
+    },
+    "_group": 1,
+    "_type": 4,
+    "_mass": 1,
+    "_allowSleep": true,
+    "_linearDamping": 0.1,
+    "_angularDamping": 0.1,
+    "_useGravity": true,
+    "_linearFactor": {
+      "__type__": "cc.Vec3",
+      "x": 1,
+      "y": 1,
+      "z": 1
+    },
+    "_angularFactor": {
+      "__type__": "cc.Vec3",
+      "x": 1,
+      "y": 1,
+      "z": 1
+    },
+    "_id": ""
+  },
+  {
+    "__type__": "cc.CompPrefabInfo",
+    "fileId": "8bnI9bQy9OP5QWD9GdQ8td"
   },
   {
     "__type__": "cc.CapsuleCollider",
@@ -3764,7 +3822,7 @@
     },
     "_enabled": true,
     "__prefab": {
-      "__id__": 128
+      "__id__": 130
     },
     "_material": null,
     "_isTrigger": false,
@@ -3784,6 +3842,118 @@
     "fileId": "d572VR5QFCIaLwUNrbledz"
   },
   {
+    "__type__": "afabbv3gkBLNqVnLm63XFz6",
+    "_name": "",
+    "_objFlags": 0,
+    "__editorExtras__": {},
+    "node": {
+      "__id__": 1
+    },
+    "_enabled": true,
+    "__prefab": {
+      "__id__": 132
+    },
+    "animation": {
+      "__id__": 125
+    },
+    "idleClipName": "Idle",
+    "runClipName": "Run",
+    "jumpClipName": "Jump",
+    "_id": ""
+  },
+  {
+    "__type__": "cc.CompPrefabInfo",
+    "fileId": "7biF4xTN1GnKNl2d9ZJ6Vf"
+  },
+  {
+    "__type__": "a1f46lLlJJEk7dN9xB09nXO",
+    "_name": "",
+    "_objFlags": 0,
+    "__editorExtras__": {},
+    "node": {
+      "__id__": 1
+    },
+    "_enabled": true,
+    "__prefab": {
+      "__id__": 134
+    },
+    "fallEuler": {
+      "__type__": "cc.Vec3",
+      "x": -75,
+      "y": 180,
+      "z": 0
+    },
+    "jumpHeight": 1.8,
+    "jumpDuration": 0.82,
+    "fallDuration": 0.25,
+    "_id": ""
+  },
+  {
+    "__type__": "cc.CompPrefabInfo",
+    "fileId": "c3tvJxTCtM04PFop06Y+tv"
+  },
+  {
+    "__type__": "765b15f3qRGLbgPmo+5l6j0",
+    "_name": "",
+    "_objFlags": 0,
+    "__editorExtras__": {},
+    "node": {
+      "__id__": 1
+    },
+    "_enabled": true,
+    "__prefab": {
+      "__id__": 136
+    },
+    "acceptInput": true,
+    "_id": ""
+  },
+  {
+    "__type__": "cc.CompPrefabInfo",
+    "fileId": "5a8Ei+eZtBcZ7ghhDARn5d"
+  },
+  {
+    "__type__": "924c0N82pFAq6dEIaHzPXTl",
+    "_name": "",
+    "_objFlags": 0,
+    "__editorExtras__": {},
+    "node": {
+      "__id__": 1
+    },
+    "_enabled": true,
+    "__prefab": {
+      "__id__": 138
+    },
+    "animationController": {
+      "__id__": 131
+    },
+    "jumpMovement": {
+      "__id__": 133
+    },
+    "_id": ""
+  },
+  {
+    "__type__": "cc.CompPrefabInfo",
+    "fileId": "5fzjpp7iFHgbgyw4g/jAc7"
+  },
+  {
+    "__type__": "c35aco7pBZEE7Fj7WfeU3Nx",
+    "_name": "",
+    "_objFlags": 0,
+    "__editorExtras__": {},
+    "node": {
+      "__id__": 1
+    },
+    "_enabled": true,
+    "__prefab": {
+      "__id__": 140
+    },
+    "_id": ""
+  },
+  {
+    "__type__": "cc.CompPrefabInfo",
+    "fileId": "51hbz3TgZGyqllaXhO039K"
+  },
+  {
     "__type__": "cc.PrefabInfo",
     "root": {
       "__id__": 1
@@ -3792,7 +3962,6 @@
       "__id__": 0
     },
     "fileId": "7baT6VIktbj6K9N2YtGOu0",
-    "instance": null,
     "targetOverrides": null
   }
 ]
