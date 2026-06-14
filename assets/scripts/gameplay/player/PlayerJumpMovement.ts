@@ -10,19 +10,19 @@ type TweenProgress = {
 export class PlayerJumpMovement extends Component
 {
     @property(Vec3) private fallEuler = new Vec3(-75, 180, 0);
-    @property private jumpHeight = 1.35;
-    @property private jumpDuration = 0.62;
+    @property private jumpHeight = 1.8;
+    @property private jumpDuration = 0.82;
     @property private fallDuration = 0.25;
 
     private readonly startEuler = new Vec3();
     private readonly fallStartEuler = new Vec3();
     private readonly tempEuler = new Vec3();
     private readonly tempPosition = new Vec3();
-    
-    private groundY = 0;
+
     private jumpProgress: TweenProgress | null = null;
     private fallProgress: TweenProgress | null = null;
-    
+    private groundY = 0;
+
     protected onLoad(): void
     {
         this.groundY = this.node.position.y;
@@ -42,20 +42,19 @@ export class PlayerJumpMovement extends Component
         const progressTarget: TweenProgress = { progress: 0 };
         this.jumpProgress = progressTarget;
 
-        tween(progressTarget).to(this.jumpDuration, { progress: 1 },
+        tween(progressTarget).to(this.jumpDuration, { progress: 1 }, {
+            easing: 'linear',
+            onUpdate: () =>
             {
-                easing: 'linear',
-                onUpdate: () =>
-                {
-                    const height = Math.sin(progressTarget.progress * Math.PI) * this.jumpHeight;
-                    this.setHeight(this.groundY + height);
-                },
-            }).call(() =>
-            {
-                this.jumpProgress = null;
-                this.setHeight(this.groundY);
-                onCompleted();
-            }).start();
+                const height = Math.sin(progressTarget.progress * Math.PI) * this.jumpHeight;
+                this.setHeight(this.groundY + height);
+            },
+        }).call(() =>
+        {
+            this.jumpProgress = null;
+            this.setHeight(this.groundY);
+            onCompleted();
+        }).start();
     }
 
     public fall(): void
@@ -69,25 +68,22 @@ export class PlayerJumpMovement extends Component
         const progressTarget: TweenProgress = { progress: 0 };
         this.fallProgress = progressTarget;
 
-        tween(progressTarget)
-            .to(this.fallDuration, { progress: 1 }, {
-                easing: 'quadOut',
-                onUpdate: () =>
-                {
-                    this.tempEuler.set(
-                        this.lerp(this.fallStartEuler.x, this.fallEuler.x, progressTarget.progress),
-                        this.lerp(this.fallStartEuler.y, this.fallEuler.y, progressTarget.progress),
-                        this.lerp(this.fallStartEuler.z, this.fallEuler.z, progressTarget.progress),
-                    );
-
-                    this.node.setRotationFromEuler(this.tempEuler);
-                },
-            })
-            .call(() =>
+        tween(progressTarget).to(this.fallDuration, { progress: 1 }, {
+            easing: 'quadOut',
+            onUpdate: () =>
             {
-                this.fallProgress = null;
-            })
-            .start();
+                this.tempEuler.set(
+                    this.lerp(this.fallStartEuler.x, this.fallEuler.x, progressTarget.progress),
+                    this.lerp(this.fallStartEuler.y, this.fallEuler.y, progressTarget.progress),
+                    this.lerp(this.fallStartEuler.z, this.fallEuler.z, progressTarget.progress),
+                );
+
+                this.node.setRotationFromEuler(this.tempEuler);
+            },
+        }).call(() =>
+        {
+            this.fallProgress = null;
+        }).start();
     }
 
     public reset(): void
@@ -97,6 +93,11 @@ export class PlayerJumpMovement extends Component
 
         this.setHeight(this.groundY);
         this.node.setRotationFromEuler(this.startEuler);
+    }
+
+    private lerp(from: number, to: number, progress: number): number
+    {
+        return from + (to - from) * progress;
     }
 
     private setHeight(y: number): void
@@ -122,10 +123,5 @@ export class PlayerJumpMovement extends Component
 
         Tween.stopAllByTarget(this.fallProgress);
         this.fallProgress = null;
-    }
-
-    private lerp(from: number, to: number, progress: number): number
-    {
-        return from + (to - from) * progress;
     }
 }
